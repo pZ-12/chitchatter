@@ -12,12 +12,13 @@ ENV VITE_HOMEPAGE=/
 ENV VITE_ROUTER_TYPE=hash
 ENV VITE_TRACKER_URL=wss://chitchatter.tail41d3d6.ts.net/tracker
 RUN npx cross-env VITE_HOMEPAGE=/ vite build
-# Replace ALL public tracker URLs with our self-hosted one in built JS
+# Replace ALL tracker references — both full wss:// URLs and bare hostnames
+# that get prefixed with wss:// at runtime via .map()
 RUN find dist/assets -name '*.js' -exec sed -i \
-  -e 's|wss://tracker\.btorrent\.xyz|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|wss://tracker\.openwebtorrent\.com|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|wss://tracker\.webtorrent\.dev|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|wss://tracker\.files\.fm:7073/announce|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|tracker\.btorrent\.xyz|chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|tracker\.openwebtorrent\.com|chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|tracker\.webtorrent\.dev|chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|tracker\.files\.fm:7073/announce|chitchatter.tail41d3d6.ts.net/tracker|g' \
   {} +
 
 # Runtime — nginx serves SPA, supervisord runs both nginx + tracker
