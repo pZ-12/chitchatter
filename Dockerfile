@@ -10,15 +10,14 @@ RUN npm pkg set homepage="/"
 RUN npm ci
 ENV VITE_HOMEPAGE=/
 ENV VITE_ROUTER_TYPE=hash
-ENV VITE_TRACKER_URL=wss://chitchatter.tail41d3d6.ts.net/tracker
+ENV VITE_TRACKER_URL=wss://chitchatter.tail41d3d6.ts.net/announce
 RUN npx cross-env VITE_HOMEPAGE=/ vite build
-# Replace ALL tracker references — both full wss:// URLs and bare hostnames
-# that get prefixed with wss:// at runtime via .map()
+# Replace ALL tracker references with our self-hosted one
 RUN find dist/assets -name '*.js' -exec sed -i \
-  -e 's|tracker\.btorrent\.xyz|chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|tracker\.openwebtorrent\.com|chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|tracker\.webtorrent\.dev|chitchatter.tail41d3d6.ts.net/tracker|g' \
-  -e 's|tracker\.files\.fm:7073/announce|chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|tracker\.btorrent\.xyz|chitchatter.tail41d3d6.ts.net/announce|g' \
+  -e 's|tracker\.openwebtorrent\.com|chitchatter.tail41d3d6.ts.net/announce|g' \
+  -e 's|tracker\.webtorrent\.dev|chitchatter.tail41d3d6.ts.net/announce|g' \
+  -e 's|tracker\.files\.fm:7073/announce|chitchatter.tail41d3d6.ts.net/announce|g' \
   {} +
 
 # Runtime — nginx serves SPA, supervisord runs both nginx + tracker
@@ -27,11 +26,12 @@ RUN apk add --no-cache nginx supervisor
 RUN npm install -g bittorrent-tracker
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist /usr/share/nginx/html
+# Use = exact match for /announce to ensure clean proxy
 RUN printf 'server {\n\
   listen 80;\n\
   root /usr/share/nginx/html;\n\
-  location /tracker {\n\
-    proxy_pass http://127.0.0.1:8000/;\n\
+  location = /announce {\n\
+    proxy_pass http://127.0.0.1:8000;\n\
     proxy_http_version 1.1;\n\
     proxy_set_header Upgrade $http_upgrade;\n\
     proxy_set_header Connection "upgrade";\n\
