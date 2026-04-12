@@ -31,7 +31,7 @@ RUN printf 'server {\n\
   listen 80;\n\
   root /usr/share/nginx/html;\n\
   location /tracker {\n\
-    proxy_pass http://127.0.0.1:8000;\n\
+    proxy_pass http://127.0.0.1:8000/;\n\
     proxy_http_version 1.1;\n\
     proxy_set_header Upgrade $http_upgrade;\n\
     proxy_set_header Connection "upgrade";\n\
