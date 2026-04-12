@@ -12,16 +12,16 @@ ENV VITE_HOMEPAGE=/
 ENV VITE_ROUTER_TYPE=hash
 ENV VITE_TRACKER_URL=wss://chitchatter.tail41d3d6.ts.net/tracker
 RUN npx cross-env VITE_HOMEPAGE=/ vite build
+# Remove dead public trackers from the built JS — keep only our self-hosted one
+RUN find dist/assets -name '*.js' -exec sed -i \
+  's|"tracker.webtorrent.dev","tracker.openwebtorrent.com","tracker.btorrent.xyz","tracker.files.fm:7073/announce"|"chitchatter.tail41d3d6.ts.net/tracker"|g' {} +
 
 # Runtime — nginx serves SPA, supervisord runs both nginx + tracker
 FROM node:20-alpine
 RUN apk add --no-cache nginx supervisor
-# Install tracker
 RUN npm install -g bittorrent-tracker
-# Static files
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist /usr/share/nginx/html
-# Nginx config — SPA + WebSocket proxy to tracker
 RUN printf 'server {\n\
   listen 80;\n\
   root /usr/share/nginx/html;\n\
@@ -37,7 +37,6 @@ RUN printf 'server {\n\
     try_files $uri $uri/ /index.html;\n\
   }\n\
 }\n' > /etc/nginx/http.d/default.conf
-# Supervisord config — runs both processes
 RUN printf '[supervisord]\nnodaemon=true\nlogfile=/dev/null\nlogfile_maxbytes=0\n\n\
 [program:nginx]\ncommand=nginx -g "daemon off;"\nautorestart=true\nstdout_logfile=/dev/null\nstderr_logfile=/dev/null\n\n\
 [program:tracker]\ncommand=bittorrent-tracker --ws --ws-port 8000 --http=false --udp=false --stats=false\nautorestart=true\nstdout_logfile=/dev/null\nstderr_logfile=/dev/null\n' > /etc/supervisord.conf
