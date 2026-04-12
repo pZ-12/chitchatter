@@ -6,8 +6,12 @@ FROM node:20-slim AS build
 WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/jeremyckahn/chitchatter.git .
+# Override homepage to / for self-hosting; use hash router so server never sees room names
+RUN npm pkg set homepage="/"
 RUN npm ci
-RUN npx cross-env VITE_HOMEPAGE="" vite build
+ENV VITE_HOMEPAGE=/
+ENV VITE_ROUTER_TYPE=hash
+RUN npx cross-env VITE_HOMEPAGE=/ vite build
 
 # Minimal runtime — static files only, read-only filesystem safe
 FROM nginx:alpine
