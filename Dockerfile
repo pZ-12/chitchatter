@@ -12,9 +12,13 @@ ENV VITE_HOMEPAGE=/
 ENV VITE_ROUTER_TYPE=hash
 ENV VITE_TRACKER_URL=wss://chitchatter.tail41d3d6.ts.net/tracker
 RUN npx cross-env VITE_HOMEPAGE=/ vite build
-# Remove dead public trackers from the built JS — keep only our self-hosted one
+# Replace ALL public tracker URLs with our self-hosted one in built JS
 RUN find dist/assets -name '*.js' -exec sed -i \
-  's|"tracker.webtorrent.dev","tracker.openwebtorrent.com","tracker.btorrent.xyz","tracker.files.fm:7073/announce"|"chitchatter.tail41d3d6.ts.net/tracker"|g' {} +
+  -e 's|wss://tracker\.btorrent\.xyz|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|wss://tracker\.openwebtorrent\.com|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|wss://tracker\.webtorrent\.dev|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
+  -e 's|wss://tracker\.files\.fm:7073/announce|wss://chitchatter.tail41d3d6.ts.net/tracker|g' \
+  {} +
 
 # Runtime — nginx serves SPA, supervisord runs both nginx + tracker
 FROM node:20-alpine
