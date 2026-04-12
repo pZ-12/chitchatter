@@ -11,6 +11,8 @@ RUN npm pkg set homepage="/"
 RUN npm ci
 ENV VITE_HOMEPAGE=/
 ENV VITE_ROUTER_TYPE=hash
+# Point tracker at our own sidecar tracker
+ENV VITE_TRACKER_URL=wss://chitchatter-tracker.tail41d3d6.ts.net
 RUN npx cross-env VITE_HOMEPAGE=/ vite build
 
 # Minimal runtime — static files only, read-only filesystem safe
