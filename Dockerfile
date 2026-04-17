@@ -26,10 +26,17 @@ RUN apk add --no-cache nginx supervisor
 RUN npm install -g bittorrent-tracker
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist /usr/share/nginx/html
+# Pre-compress all static assets for gzip_static
+RUN find /usr/share/nginx/html -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.json' -o -name '*.svg' -o -name '*.webmanifest' -o -name '*.map' -o -name '*.txt' \) -exec gzip -9 -k {} \;
 # Use = exact match for /announce to ensure clean proxy
 RUN printf 'server {\n\
   listen 80;\n\
   root /usr/share/nginx/html;\n\
+  gzip on;\n\
+  gzip_types text/plain text/css application/javascript application/json image/svg+xml;\n\
+  gzip_min_length 256;\n\
+  gzip_vary on;\n\
+  gzip_static on;\n\
   location = /announce {\n\
     proxy_pass http://127.0.0.1:8000;\n\
     proxy_http_version 1.1;\n\
